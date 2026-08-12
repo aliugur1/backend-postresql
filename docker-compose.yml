@@ -1,0 +1,25 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: template1
+    ports:
+      - "51214:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  postgres_shadow:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: template1
+    ports:
+      - "51215:5432"
+
+volumes:
+  postgres_data:
