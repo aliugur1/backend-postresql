@@ -4,10 +4,206 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
+}
+ 
+datasource db {
+  provider ="postgresql"
+}
+//enums
+enum Role {
+USER
+ADMIN
+}
+enum FuelType {
+GASOLINE_95
+GASOLINE_97
+DIESEL
+PREMIUM_DIESEL
+LPG
+}
+enum PumpStatus {
+ACTIVE
+PASSIVE
+FAULTY
+MAINTENANCE
+}
+enum CustomerType {
+INDIVIDUAL
+CORPORATE
+}
+enum CustomerStatus {
+ACTIVE
+PASSIVE
+}
+enum LoyaltyLevel {
+BRONZE
+SILVER
+GOLD
+PLATINUM
+}
+enum PaymentType {
+CASH
+CREDIT_CARD
+ON_ACCOUNT
+FLEET_CARD
+}
+enum ActivityType {
+SALE
+PUMP_STATUS_CHANGED
+CUSTOMER_CREATED
+CUSTOMER_UPDATED
+CUSTOMER_DELETED
+}
+enum EntityType {
+User
+Pump
+Customer
+Sale
+}
+enum PumpModel {
+ProLine_4
+SmartLine_X
 }
 
-datasource db {
-  provider = "postgresql"
+//models
+
+model User{
+  id              String @id @default(uuid())
+  firstName       String
+  lastName        String
+  email           String @unique
+  phone           String @unique
+  password        String
+  role            Role @default(USER) 
+  stationName     String?
+  stationCode     String?
+  stationAddress  String?
+  city            String?
+  district        String?
+  profileImageUrl String?
+  createdAt       DateTime @default(now()) 
+  updateAt        DateTime @updatedAt      
+
+  @@index([firstName, lastName])
+  @@index([role])
+  @@index([createdAt])
+  @@index([updateAt]) 
+}
+
+model Pump{
+  id              String @id @default(uuid())
+  name            String  
+  pumpNumber      String @unique
+  serialNumber    String @unique 
+  stationCode     String
+  fuelType        FuelType  
+  status          PumpStatus @default(ACTIVE) 
+  brand           String @default("MEPSAN")
+  model           PumpModel
+  nozzleCount     Int @default(4)
+  unitPrice       Decimal @db.Decimal(10, 2)
+  dailyLiter      Decimal @default(0) @db.Decimal(10, 2)  
+  dailyRevenue    Decimal @default(0) @db.Decimal(10, 2)  
+  monthlyLiter    Decimal @default(0) @db.Decimal(10, 2)  
+  monthlyRevenue  Decimal @default(0) @db.Decimal(10, 2)  
+  totalLiter      Decimal @default(0) @db.Decimal(10, 2)  
+  totalRevenue    Decimal @default(0) @db.Decimal(10, 2)  
+  lastSaleAt      DateTime?
+  lastMaintenanceAt DateTime?
+  nextMaintenanceAt DateTime?
+  faultCode         String?
+  faultMessage      String?
+  createdAt       DateTime @default(now()) 
+  updateAt        DateTime @updatedAt      
+
+  sales     Sale[]
+
+  @@index([name])
+  @@index([fuelType])
+  @@index([status])
+  @@index([dailyLiter])
+  @@index([dailyRevenue])
+  @@index([monthlyLiter])
+  @@index([monthlyRevenue])
+  @@index([totalLiter])
+  @@index([totalRevenue])
+  @@index([lastSaleAt])
+  @@index([createdAt])
+  @@index([updateAt])
+}
+
+model Customer{
+  id              String @id @default(uuid())
+  customerType    CustomerType @default(INDIVIDUAL)
+  firstName       String? //burada INDIVIDUAL olursa zorunlu ama 
+  lastName        String? // CORPORATE olursa zorunlu değil
+  companyName     String? // bunu zod ile kontrol edecek 
+  email           String @unique
+  phone           String @unique
+  plateNumber     String?
+  taxNumber       String?
+  taxOffice       String?
+  city            String?
+  district        String?
+  address         String?
+  status          CustomerStatus @default(ACTIVE) 
+  loyaltyLevel    LoyaltyLevel @default(BRONZE) 
+  totalPurchase   Decimal @default(0) @db.Decimal(10, 2)  
+  totalLiter      Decimal @default(0) @db.Decimal(10, 2) 
+  purchaseCount   Int
+  lastPurchaseAt  DateTime? 
+  notes           String?
+  createdAt       DateTime @default(now()) 
+  updateAt        DateTime @updatedAt      
+
+  sales Sale[]
+
+  @@index([firstName, lastName])
+  @@index([status])
+  @@index([loyaltyLevel])
+  @@index([totalPurchase])
+  @@index([totalLiter])
+  @@index([lastPurchaseAt])
+  @@index([createdAt])
+  @@index([updateAt])
+
+}
+
+model Sale{
+  id              String @id @default(uuid())
+  receiptNumber   String  @unique
+  pumpId          String
+  pump            Pump    @relation(fields:[pumpId],references:[id])
+  customerId      String
+  customer        Customer @relation(fields:[customerId],references:[id])
+  fuelType        FuelType  
+  liter           Decimal @default(0) @db.Decimal(10, 2)  
+  unitPrice       Decimal             @db.Decimal(10, 2)  
+  totalAmount     Decimal @default(0) @db.Decimal(10, 2)  
+  paymentType      PaymentType
+  plateNumber     String?
+  attendantName   String
+  createdAt       DateTime @default(now())
+  
+  @@index([pumpId, createdAt])
+  @@index([customerId, createdAt])
+  @@index([fuelType])
+  @@index([liter])
+  @@index([totalAmount])
+
+}
+
+model Activity{
+
+  id              String @id @default(uuid())
+  type            ActivityType
+  title           String
+  description     String
+  entityType      EntityType
+  entityId        String? 
+  severity        String
+  createdAt       DateTime @default(now()) 
+  @@index([createdAt])
+  
 }
