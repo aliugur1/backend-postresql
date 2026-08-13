@@ -1,6 +1,6 @@
 const asyncHandler = require("../utils/asyncHandler");
 const ApiError = require("../utils/ApiError");
-const { success } = require("../utils/apiResponse");
+const { success, list } = require("../utils/apiResponse");
 const pumpService = require("../services/pump.service");
 // Tüm pompaların sade listesi (ör. dashboard/liste ekranı için)
 exports.getPumpsList = asyncHandler(async (req, res) => {
@@ -44,12 +44,27 @@ exports.updatePumpStatus = asyncHandler(async (req, res) => {
           faultCode: req.body.faultCode,
           faultMessage: req.body.faultMessage,
         })
-      : await pumpService.reportMaintenance(pumpId, {
-          nextMaintenanceAt: req.body.nextMaintenanceAt,
-        });
+      : status === "ACTIVE"
+        ? await pumpService.reportMaintenance(pumpId, {
+            nextMaintenanceAt: req.body.nextMaintenanceAt,
+          })
+        : await pumpService.setPumpStatus(pumpId, status);
 
   return success(res, {
     message: "Pompa durumu güncellendi.",
     data: updatedPump,
+  });
+});
+// Arama/filtre/sıralama/sayfalama destekli pompa listesi
+exports.searchPumps = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 20 } = req.query;
+  const { items, totalItems } = await pumpService.searchPumps(req.query);
+
+  return list(res, {
+    message: "Pompa listesi getirildi.",
+    data: items,
+    page,
+    limit,
+    totalItems,
   });
 });
