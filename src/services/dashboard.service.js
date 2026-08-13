@@ -45,7 +45,7 @@ async function getSummary() {
     monthlyRevenue: monthAgg._sum.totalAmount ?? 0,
   };
 }
-async function getTopPumps(limit = 5) {
+async function getTopPumps(limit = 1) {
   const rows = await prisma.sale.groupBy({
     by: ["pumpId"],
     _sum: { liter: true, totalAmount: true },
@@ -125,38 +125,22 @@ async function getRecentSales(limit = 10) {
     take: limit,
     orderBy: { createdAt: "desc" },
   });
+  // Her kolonu tek tek yazmak yerine, tüm objeyi açıp (...sale)
+  // sadece null olabilecek sayısal değerlere varsayılan '0' atıyoruz.
   return sales.map((sale) => ({
-    id: sale.id,
-    receiptNumber: sale.receiptNumber,
-    plateNumber: sale.plateNumber,
-    fuelType: sale.fuelType,
-    attendantName: sale.attendantName,
-    paymentType: sale.paymentType,
-    pumpId: sale.pumpId,
-    customerId: sale.customerId,
-    // Saf sayısal ve tarihsel değerler (Yorucu formatlama işlemleri kaldırıldı)
+    ...sale,
     liter: sale.liter ?? 0,
     totalAmount: sale.totalAmount ?? 0,
     unitPrice: sale.unitPrice ?? 0,
-    createdAt: sale.createdAt,
   }));
 }
+
 async function getRecentActivities(limit = 10) {
-    // Son aktiviteler (satış, pompa durum değişikliği, müşteri işlemleri vb.)
-    const activity = await prisma.activity.findMany({
-        take:limit,
-        orderBy:{createdAt:"desc"},
-    });
-    return activity.map((a)=>({
-        id: a.id,
-        type: a.type,
-        title: a.title,
-        description: a.description,
-        entityType: a.entityType,
-        entityId: a.entityId,
-        severity: a.severity,
-        createdAt: a.createdAt,
-    }))
+  // Son aktiviteler (satış, pompa durum değişikliği, müşteri işlemleri vb.)
+  return await prisma.activity.findMany({
+    take: limit,
+    orderBy: { createdAt: "desc" },
+  });
 }
 
 module.exports = {
