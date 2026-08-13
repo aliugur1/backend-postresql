@@ -20,6 +20,11 @@ exports.list = (
     filters = {},
   } = {},
 ) => {
+  // Eğer limit "all", 0 veya tanımsız sa limitsiz kabul et
+  const isUnlimited = limit === "all" || parseInt(limit) === 0 || !limit;
+  // Limitsiz ise limit veri sayısı kadar olur, değilse gelen limit kullanılır
+  const finalLimit = isUnlimited ? totalItems || data.length : parseInt(limit);
+  const finalPage = isUnlimited ? 1 : parseInt(page);
   const totalPages = Math.ceil(totalItems / limit) || 1;
 
   return res.status(200).json({
@@ -27,12 +32,12 @@ exports.list = (
     message,
     data,
     pagination: {
-      page,
-      limit,
+      page: finalPage,
+      limit: isUnlimited ? "all" : finalLimit,
       totalItems,
       totalPages,
-      hasNextPage: page < totalPages,
-      hasPreviousPage: page > 1,
+      hasNextPage: finalPage < totalPages,
+      hasPreviousPage: finalPage > 1,
     },
     filters,
   });

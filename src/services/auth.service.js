@@ -23,7 +23,6 @@ async function register({ firstName, lastName, email, phone, password }) {
 
   return user;
 }
-
 async function login({ email, password }) {
   const user = await prisma.user.findUnique({ where: { email } }); // select yok → password dahil
   if (!user || !(await bcrypt.compare(password, user.password))) {
@@ -33,7 +32,6 @@ async function login({ email, password }) {
       "E-posta veya şifre hatalı.",
     );
   }
-
   const accessToken = jwt.sign(
     { sub: user.id, role: user.role },
     process.env.JWT_SECRET,
@@ -41,7 +39,6 @@ async function login({ email, password }) {
       expiresIn: process.env.JWT_EXPIRES_IN,
     },
   );
-
   delete user.password; // response'a asla eklenmesin
   return { accessToken, expiresIn: process.env.JWT_EXPIRES_IN, user };
 }

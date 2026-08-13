@@ -13,14 +13,12 @@ module.exports = (err, req, res, next) => {
       ...(err.errors ? { errors: err.errors } : {}),
     });
   }
-
   // 2. Zod Veri Doğrulama (Validation) hataları
   if (err instanceof ZodError) {
     const errors = err.issues.map((e) => ({
       field: e.path.join("."),
       message: e.message,
     }));
-
     return res.status(400).json({
       success: false,
       message: "Gönderilen bilgiler geçersiz.",
@@ -28,7 +26,6 @@ module.exports = (err, req, res, next) => {
       errors,
     });
   }
-
   // 3. Prisma Veri tabanı hataları
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     // P2002: Benzersizlik (Unique) kısıtlaması ihlali (Örn: Aynı e-posta ile tekrar kayıt)
@@ -41,7 +38,6 @@ module.exports = (err, req, res, next) => {
         errors: [{ field, message: "Bu değer zaten kullanılıyor." }],
       });
     }
-
     // P2025: Güncellenmek, silinmek veya bulunmak istenen kayıt veri tabanında yok
     if (err.code === "P2025") {
       return res.status(404).json({
@@ -51,10 +47,7 @@ module.exports = (err, req, res, next) => {
       });
     }
   }
-
   // 4. Bilinmeyen/Öngörülemeyen Sistem Hataları (Yazılımcı hatası, bağlantı kopması vb.)
-  console.error(err);
-
   return res.status(500).json({
     success: false,
     message: "Sunucu hatası oluştu.",
