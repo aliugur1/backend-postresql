@@ -1,11 +1,21 @@
 const prisma = require("../config/db");
+const ApiError = require("../utils/ApiError");
+
+const ALLOWED_SORT_FIELDS = [
+  "pumpNumber",
+  "name",
+  "status",
+  "unitPrice",
+  "dailyLiter",
+  "dailyRevenue",
+  "createdAt",
+];
 
 // 1. Pompaları Listeleme Servisi (Tüm kolonları otomatik getirir)
 async function getPumpsList() {
   const pump = await prisma.pump.findMany({
     orderBy: { createdAt: "desc" },
   });
-  if (!pump) return null;
   // Gelen verilerin null/undefined olmasına karşı güvenli map
   return pump.map((pump) => ({
     ...pump,
@@ -200,6 +210,84 @@ async function reportMaintenance(pumpId, { nextMaintenanceAt } = {}) {
   return updatedPump;
 }
 
+// Arama/filtre/sıralama/sayfalama destekli pompa listesi
+async function searchPumps({
+  page = 1,
+  limit = 20,
+  search,
+  status,
+  fuelType,
+  stationCode,
+  minDailyRevenue,
+  maxDailyRevenue,
+  sortBy = "createdAt",
+  sortOrder = "desc",
+}) {
+  if (!ALLOWED_SORT_FIELDS.includes(sortBy)) {
+    throw new ApiError(400, "VALIDATION_ERROR", "Geçersiz sortBy değeri.");
+  }
+
+  const where = {
+    ...(search
+      ? {
+          OR: [
+            { name: { contains: search, mode: "insensitive" } },
+            { serialNumber: { contains: search, mode: "insensitive" } },
+          ],
+        }
+      : {}),
+    ...(status ? { status } : {}),
+    ...(fuelType ? { fuelType } : {}),
+    ...(stationCode ? { stationCode } : {}),
+    ...(minDailyRevenue || maxDailyRevenue
+      ? {
+          dailyRevenue: {
+            ...(minDailyRevenue ? { gte: Number(minDailyRevenue) } : {}),
+            ...(maxDailyRevenue ? { lte: Number(maxDailyRevenue) } : {}),
+          },
+        }
+      : {}),
+  };
+
+  const numericPage = Number(page);
+  const numericLimit = Number(limit);
+  const skip = (numericPage - 1) * numericLimit;
+
+  const [items, totalItems] = await Promise.all([
+    prisma.pump.findMany({
+      where,
+      orderBy: { [sortBy]: sortOrder },
+      skip,
+      take: numericLimit,
+    }),
+    prisma.pump.count({ where }),
+  ]);
+
+  return { items, totalItems };
+}
+
+// PASSIVE/MAINTENANCE gibi ek alan gerektirmeyen durum geçişleri için
+// (FAULTY/ACTIVE geçişleri reportFault/reportMaintenance üzerinden yürür)
+async function setPumpStatus(pumpId, status) {
+  const [updatedPump] = await prisma.$transaction([
+    prisma.pump.update({
+      where: { id: pumpId },
+      data: { status },
+    }),
+    prisma.activity.create({
+      data: {
+        type: "PUMP_STATUS_CHANGED",
+        title: `Pompa durumu değişti: ${status}`,
+        description: `Pompa durumu ${status} olarak güncellendi.`,
+        entityType: "Pump",
+        entityId: pumpId,
+        severity: "LOW",
+      },
+    }),
+  ]);
+  return updatedPump;
+}
+
 module.exports = {
   getPumpsList,
   getPump,
@@ -209,4 +297,6 @@ module.exports = {
   getSalesData,
   reportFault,
   reportMaintenance,
+  searchPumps,
+  setPumpStatus,
 };

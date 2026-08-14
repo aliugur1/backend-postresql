@@ -16,6 +16,12 @@ const updateStatusSchema = z.discriminatedUnion("status", [
     status: z.literal("ACTIVE"),
     nextMaintenanceAt: z.coerce.date().optional(), //z.coerce.Tip Dönüşümü (Coercion) optional() O alanın zorunlu olmadığını
   }),
+  z.object({
+    status: z.literal("PASSIVE"),
+  }),
+  z.object({
+    status: z.literal("MAINTENANCE"),
+  }),
 ]);
 
 module.exports = { pumpIdParamSchema, updateStatusSchema };

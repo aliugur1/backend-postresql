@@ -9,9 +9,11 @@ const {
 } = require("../schemas/pump.schema");
 // GET /api/pumps -> tüm pompaların sade listesi
 router.get("/", protect, pumpController.getPumpsList);
+// GET /api/pumps/search -> arama/filtre/sıralama/sayfalama destekli liste
+router.get("/search", protect, pumpController.searchPumps);
 // GET /api/pumps/:pumpId -> tek pompanın istatistik/yakıt/bakım/satış birleşik raporu
 router.get(
-  "/:pumpId",
+  "/:pump",
   protect,
   validate(pumpIdParamSchema, "params"),
   pumpController.getPump,
