@@ -13,7 +13,7 @@ router.get("/", protect, pumpController.getPumpsList);
 router.get("/search", protect, pumpController.searchPumps);
 // GET /api/pumps/:pumpId -> tek pompanın istatistik/yakıt/bakım/satış birleşik raporu
 router.get(
-  "/:pumpId",
+  "/:pump",
   protect,
   validate(pumpIdParamSchema, "params"),
   pumpController.getPump,

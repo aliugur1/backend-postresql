@@ -151,7 +151,7 @@ model Customer{
   loyaltyLevel    LoyaltyLevel @default(BRONZE) 
   totalPurchase   Decimal @default(0) @db.Decimal(10, 2)  
   totalLiter      Decimal @default(0) @db.Decimal(10, 2) 
-  purchaseCount   Int
+  purchaseCount   Int @default(0)
   lastPurchaseAt  DateTime? 
   notes           String?
   createdAt       DateTime @default(now()) 

@@ -16,7 +16,6 @@ async function getPumpsList() {
   const pump = await prisma.pump.findMany({
     orderBy: { createdAt: "desc" },
   });
-  if (!pump) return null;
   // Gelen verilerin null/undefined olmasına karşı güvenli map
   return pump.map((pump) => ({
     ...pump,
