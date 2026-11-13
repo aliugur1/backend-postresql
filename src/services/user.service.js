@@ -7,6 +7,7 @@ async function getUser(userId) {
     where: { id: userId },
   });
   if (!u) return null;
+  // password hash'i asla response'a gitmesin diye burada siliyoruz
   delete u.password;
   return { ...u };
 }
@@ -16,11 +17,14 @@ async function updateUser(userId, inputData) {
     where: { id: userId },
     data: inputData,
   });
+  // prisma.update() de tüm kolonları (password dahil) döndürür, aynı sebeple siliyoruz
   delete u.password;
   return { ...u };
 }
 
 async function changeUserPassword(userId, { currentPassword, password }) {
+  // Şifre karşılaştırması yapabilmek için hash'i özellikle select ile çekiyoruz
+  // (getUser'daki gibi tüm kolonları çekip sonra silmek yerine)
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { password: true },
@@ -42,6 +46,9 @@ async function changeUserPassword(userId, { currentPassword, password }) {
     data: { password: hash },
   });
 
+  // Controller'daki "if (!changed) 404" kontrolü çalışsın diye başarılı
+  // işlemde açıkça true döndürüyoruz — return unutulursa undefined döner
+  // ve şifre değişse bile controller yanlışlıkla 404 fırlatır
   return true;
 }
 

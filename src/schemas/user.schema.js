@@ -1,6 +1,8 @@
 const { z } = require("zod");
 const {Role}= require("@prisma/client")
 
+// create ve update şemaları arasında ortak olan alanlar burada tek yerde tanımlı,
+// ikisi de aynı kuralları kullansın diye spread (...commonFields) ile paylaşılıyor
 const commonFields = {
   firstName: z.string().min(1, "Adınız gereklidir"),
   lastName: z.string().min(1, "Soyadınız gereklidir"),
@@ -13,6 +15,9 @@ const commonFields = {
   stationCode: z.string().optional(),
   stationName: z.string().optional(),
 };
+// role bilinçli olarak sadece burada, createUserSchema'da var — commonFields'a
+// eklenirse updateUserSchema da miras alır ve bir kullanıcı kendi profilini
+// güncellerken role: "ADMIN" gönderip kendini yetkilendirebilir (privilege escalation)
 const createUserSchema = z
   .object({
     ...commonFields,
@@ -36,6 +41,9 @@ const changePasswordSchema = z
     path: ["passwordConfirm"],
   });
 
+// .partial() ile tüm alanlar opsiyonel hale geliyor — kullanıcı sadece
+// değiştirmek istediği alanı gönderebilsin diye (örn. sadece city), her seferinde
+// firstName/lastName/email/phone'u da göndermek zorunda kalmasın
 const updateUserSchema = z.object({
   ...commonFields,
 }).partial();

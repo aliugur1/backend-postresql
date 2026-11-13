@@ -45,3 +45,17 @@ exports.protect = asyncHandler(async (req, res, next) => {
       .json({ success: false, message: "Geçersiz veya süresi dolmuş token." });
   }
 });
+// Kullanım: router'da protect'ten SONRA eklenir, örn. restrictTo("ADMIN").
+// (...roles) => middleware döndüren bir fabrika fonksiyonu, böylece route'a
+// göre farklı roller verilebilir: restrictTo("ADMIN"), restrictTo("ADMIN", "MANAGER") gibi.
+// req.user.role, protect middleware'inin token'dan çözüp req'e koyduğu bilgiden geliyor.
+exports.restrictTo = (...roles) => (req, res, next) => {
+  if (!roles.includes(req.user.role)) {
+    return res.status(403).json({
+      success: false,
+      message: "Bu işlem için yetkiniz yok.",
+      errorCode: "FORBIDDEN",
+    });
+  }
+  next();
+};

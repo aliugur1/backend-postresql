@@ -10,6 +10,7 @@ module.exports = [
         module: "readonly",
         process: "readonly",
         __dirname: "readonly",
+        console: "readonly",
       },
     },
     rules: {

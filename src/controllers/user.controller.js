@@ -3,14 +3,19 @@ const ApiError = require("../utils/ApiError");
 const { success } = require("../utils/apiResponse");
 const userService = require("../services/user.service");
 
+// req.user.id, protect middleware'inin token'dan çözüp req'e koyduğu kimlik.
+// req.params'tan userId okunmuyor — aksi halde biri params'a başkasının
+// id'sini yazıp onun profilini görebilir/değiştirebilirdi (IDOR açığı).
 exports.getUser = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const user = await userService.getUser(userId);
-  return success(res, { message: "veriler getirildi", data: { user } });
+  return success(res, { message: "veriler getirildi", data: user });
 });
 
 exports.updateUser = asyncHandler(async (req, res) => {
   const userId = req.user.id;
+  // req.user.id zaten protect middleware'inde DB'den doğrulanmış bir kullanıcıya
+  // ait, bu yüzden burada ayrıca "kullanıcı var mı" diye tekrar sorgulamıyoruz
   const updateUser = await userService.updateUser(userId, req.body);
   return success(res, {
     message: "kullanıcı güncellendi",

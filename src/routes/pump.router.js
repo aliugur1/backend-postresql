@@ -1,28 +1,31 @@
 const express = require("express");
 const router = express.Router();
-const { protect } = require("../middlewares/auth.middleware");
+const { protect, restrictTo } = require("../middlewares/auth.middleware");
 const validate = require("../middlewares/validate.middleware");
 const pumpController = require("../controllers/pump.controller");
 const {
   pumpIdParamSchema,
   updateStatusSchema,
 } = require("../schemas/pump.schema");
-// GET /api/pumps -> tüm pompaların sade listesi
+// GET /api/pumps -> tüm pompaların sade listesi (okuma, rol farkı yok)
 router.get("/", protect, pumpController.getPumpsList);
 // GET /api/pumps/search -> arama/filtre/sıralama/sayfalama destekli liste
 router.get("/search", protect, pumpController.searchPumps);
 // GET /api/pumps/:pumpId -> tek pompanın istatistik/yakıt/bakım/satış birleşik raporu
 router.get(
-  "/:pump",
+  "/:pumpId",
   protect,
   validate(pumpIdParamSchema, "params"),
   pumpController.getPump,
 );
 // PATCH /api/pumps/:pumpId/status -> tek endpoint, body'deki "status" alanına göre
 // arıza bildirimi (FAULTY) veya bakım tamamlama (ACTIVE) işlemi yapar
+// Pompa durumunu değiştirmek riskli bir işlem, bu yüzden sadece ADMIN yapabilir.
+// protect (kimlik) -> restrictTo (yetki) -> validate (veri) sırası korunuyor.
 router.patch(
   "/:pumpId/status",
   protect,
+  restrictTo("ADMIN"),
   validate(pumpIdParamSchema, "params"),
   validate(updateStatusSchema),
   pumpController.updatePumpStatus,

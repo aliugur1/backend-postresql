@@ -47,7 +47,8 @@ module.exports = (err, req, res, next) => {
       });
     }
   }
-  // 4. Bilinmeyen/Öngörülemeyen Sistem Hataları (Yazılımcı hatası, bağlantı kopması vb.)
+  // 4. Bilinmeyen/Öngörülemeyen Sistem Hataları
+  console.error(err); // client'a gösterilmiyor ama sunucu log kalsın, aksi halde hata iz bırakmadan kaybolur
   return res.status(500).json({
     success: false,
     message: "Sunucu hatası oluştu.",

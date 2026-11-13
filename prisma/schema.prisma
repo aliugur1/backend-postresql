@@ -50,10 +50,15 @@ FLEET_CARD
 }
 enum ActivityType {
 SALE
+SALE_COMPLETED
 PUMP_STATUS_CHANGED
 CUSTOMER_CREATED
 CUSTOMER_UPDATED
 CUSTOMER_DELETED
+CUSTOMER_STATUS_CHANGED
+USER_REGISTERED
+USER_PROFILE_UPDATED
+PASSWORD_CHANGED
 }
 enum EntityType {
 User
@@ -175,8 +180,8 @@ model Sale{
   receiptNumber   String  @unique
   pumpId          String
   pump            Pump    @relation(fields:[pumpId],references:[id])
-  customerId      String
-  customer        Customer @relation(fields:[customerId],references:[id])
+  customerId      String?
+  customer        Customer? @relation(fields:[customerId],references:[id])
   fuelType        FuelType  
   liter           Decimal @default(0) @db.Decimal(10, 2)  
   unitPrice       Decimal             @db.Decimal(10, 2)  
